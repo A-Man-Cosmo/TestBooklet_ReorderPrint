@@ -122,7 +122,7 @@ async function processPDF() {
       const [copiedPage] = await newPdf.copyPages(existingPdf, [interlacedOrder[i]]);
       
       if ((i + 1) % 4 === 3 || (i + 1) % 4 === 0) {
-        copiedPage.setRotation(copiedPage.getRotation().rotate(180));
+        copiedPage.setRotation(PDFLib.degrees(180));
       }
 
       newPdf.addPage(copiedPage);
