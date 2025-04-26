@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CIE Test Booklet Format Maker</title>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 350px;
+    }
+    .upload-area {
+      border: 2px dashed #007bff;
+      border-radius: 8px;
+      padding: 20px;
+      cursor: pointer;
+      color: #007bff;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    #spinner {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>CIE Test Booklet Format Maker</h2>
+  
+  <div id="uploadArea" class="upload-area">
+    Click or Drag PDF Here
+  </div>
+  
+  <button class="btn" onclick="processPDF()">Process PDF</button>
+
+  <div id="spinner">
+    <p>Processing...</p>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+document.getElementById('uploadArea').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf';
+  input.onchange = e => {
+    selectedFile = e.target.files[0];
+    document.getElementById('uploadArea').textContent = selectedFile.name;
+  }
+  input.click();
+});
+
+document.getElementById('uploadArea').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+
+document.getElementById('uploadArea').addEventListener('drop', (e) => {
+  e.preventDefault();
+  selectedFile = e.dataTransfer.files[0];
+  document.getElementById('uploadArea').textContent = selectedFile.name;
+});
+
+async function processPDF() {
+  if (!selectedFile) {
+    alert('Please select a PDF file first!');
+    return;
+  }
+
+  document.getElementById('spinner').style.display = 'block';
+
+  const reader = new FileReader();
+  reader.onload = async function(event) {
+    const arrayBuffer = event.target.result;
+    const existingPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+
+    const pages = existingPdf.getPages();
+    const totalPages = pages.length;
+
+    const half = Math.floor(totalPages / 2);
+    const firstHalf = Array.from({ length: half }, (_, i) => i);
+    const secondHalf = Array.from({ length: totalPages - half }, (_, i) => totalPages - 1 - i);
+
+    const interlacedOrder = [];
+    const maxLen = Math.max(firstHalf.length, secondHalf.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < secondHalf.length) interlacedOrder.push(secondHalf[i]);
+      if (i < firstHalf.length) interlacedOrder.push(firstHalf[i]);
+    }
+
+    const newPdf = await PDFLib.PDFDocument.create();
+    for (let i = 0; i < interlacedOrder.length; i++) {
+      const [copiedPage] = await newPdf.copyPages(existingPdf, [interlacedOrder[i]]);
+      
+      if ((i + 1) % 4 === 3 || (i + 1) % 4 === 0) {
+        copiedPage.setRotation(copiedPage.getRotation().rotate(180));
+      }
+
+      newPdf.addPage(copiedPage);
+    }
+
+    const pdfBytes = await newPdf.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = 'processed.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(blobUrl);
+    document.getElementById('spinner').style.display = 'none';
+  };
+
+  reader.readAsArrayBuffer(selectedFile);
+}
+</script>
+
+</body>
+</html>
