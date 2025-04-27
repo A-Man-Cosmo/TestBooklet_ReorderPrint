@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>CIE Test Booklet Format Maker</title>
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" type="image/svg+xml">
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
   <style>
     body {
@@ -21,7 +21,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       text-align: center;
-      width: 350px;
+      width: 360px;
     }
     .upload-area {
       border: 2px dashed #007bff;
@@ -47,6 +47,30 @@
       display: none;
       margin-top: 20px;
     }
+    .lds-dual-ring {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+    }
+    .lds-dual-ring:after {
+      content: " ";
+      display: block;
+      width: 46px;
+      height: 46px;
+      margin: 1px;
+      border-radius: 50%;
+      border: 5px solid #007bff;
+      border-color: #007bff transparent #007bff transparent;
+      animation: lds-dual-ring 1.2s linear infinite;
+    }
+    @keyframes lds-dual-ring {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 <body>
@@ -61,6 +85,7 @@
   <button class="btn" onclick="processPDF()">Process PDF</button>
 
   <div id="spinner">
+    <div class="lds-dual-ring"></div>
     <p>Processing...</p>
   </div>
 </div>
@@ -134,7 +159,8 @@ async function processPDF() {
 
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = 'processed.pdf';
+    const originalName = selectedFile.name.replace(/\.pdf$/i, '') || 'booklet';
+    link.download = 'Booklet_' + originalName + '.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
